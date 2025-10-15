@@ -1,12 +1,12 @@
 import 'package:cookly_app/screen/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:cookly_app/theme/app_color.dart';
-import '../widgets/sections/logo_section.dart';
+import '../widgets/sections/login/logo_section.dart';
 import '../widgets/components/custom_text_field.dart';
 import '../widgets/components/custom_button.dart';
-import '../widgets/sections/divider_section.dart';
-import 'package:cookly_app/widgets/sections/social_login_section.dart';
-import '../widgets/sections/register_section.dart';
+import '../widgets/sections/login/divider_section.dart';
+import 'package:cookly_app/widgets/sections/login/social_login_section.dart';
+import '../widgets/sections/login/register_section.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});

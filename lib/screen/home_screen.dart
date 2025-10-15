@@ -1,5 +1,6 @@
+import 'package:cookly_app/screen/content/home_content.dart';
 import 'package:flutter/material.dart';
-import 'package:cookly_app/widgets/components/custom_bottom_nav_bar.dart';
+import 'package:cookly_app/widgets/components/custom_bottom_navbar.dart';
 import 'package:cookly_app/theme/app_color.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -13,9 +14,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
   final List<Widget> _pages = [
-    const Center(
-      child: Text("Home Page", style: TextStyle(color: Colors.black)),
-    ),
+    const HomeContent(),
     const Center(
       child: Text("Search Page", style: TextStyle(color: Colors.black)),
     ),
