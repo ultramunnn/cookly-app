@@ -1,4 +1,5 @@
 import 'package:cookly_app/screen/content/home_content.dart';
+import 'package:cookly_app/screen/profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:cookly_app/widgets/components/custom_bottom_navbar.dart';
 import 'package:cookly_app/theme/app_color.dart';
@@ -24,9 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
     const Center(
       child: Text("Favorite Page", style: TextStyle(color: Colors.black)),
     ),
-    const Center(
-      child: Text("Profile Page", style: TextStyle(color: Colors.black)),
-    ),
+    const ProfileScreen(),
   ];
 
   void _onItemTapped(int index) {

@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'login_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:cookly_app/screen/login_screen.dart';
+import 'package:cookly_app/screen/home_screen.dart';
 import 'package:cookly_app/theme/app_color.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -14,12 +16,30 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Timer(const Duration(seconds: 2), () {
+    _navigateAfterSplash();
+  }
+
+  Future<void> _navigateAfterSplash() async {
+    // kasih delay biar splash tetap kelihatan
+    await Future.delayed(const Duration(seconds: 2));
+
+    final session = Supabase.instance.client.auth.currentSession;
+
+    if (!mounted) return;
+
+    if (session != null) {
+      // ✅ User sudah login
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+      );
+    } else {
+      // ❌ Belum login
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const LoginScreen()),
       );
-    });
+    }
   }
 
   @override
@@ -35,7 +55,7 @@ class _SplashScreenState extends State<SplashScreen> {
               width: 150,
               height: 150,
             ),
-
+            const SizedBox(height: 16),
             const Text(
               'Cookly',
               style: TextStyle(

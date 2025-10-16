@@ -3,7 +3,6 @@ import 'package:cookly_app/widgets/components/custom_navbar.dart';
 import 'package:cookly_app/widgets/components/custom_searchbar.dart';
 import 'package:cookly_app/widgets/sections/home/populerrecipe_section.dart';
 import 'package:flutter/material.dart';
-import 'package:cookly_app/theme/app_color.dart';
 import 'package:cookly_app/widgets/sections/home/recipetoday_section.dart';
 import 'package:cookly_app/widgets/sections/home/categoryfilter_section.dart';
 import 'package:cookly_app/widgets/sections/home/desserts_section.dart';

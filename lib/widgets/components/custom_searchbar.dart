@@ -15,7 +15,7 @@ class CustomSearchbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(left: 16, right: 8), // jarak kiri & kanan
+      padding: const EdgeInsets.only(left: 0, right: 0), // jarak kiri & kanan
       child: Row(
         children: [
           // Field abu-abu
