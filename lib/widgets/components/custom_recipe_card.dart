@@ -4,11 +4,12 @@ import 'package:flutter/material.dart';
 class CustomRecipeCard extends StatefulWidget {
   final String? title;
   final String? titleCenter;
-  final String imageAsset; // ubah dari imageUrl ke imageAsset
+  final String imageUrl;
   final String? duration;
-  final int height;
-  final int width;
+  final double height;
+  final double width;
   final VoidCallback? onFavoriteTap;
+  final bool showDuration;
 
   const CustomRecipeCard({
     super.key,
@@ -16,9 +17,10 @@ class CustomRecipeCard extends StatefulWidget {
     this.titleCenter,
     required this.height,
     required this.width,
-    required this.imageAsset,
+    required this.imageUrl,
     this.duration,
     this.onFavoriteTap,
+    this.showDuration = true,
   });
 
   @override
@@ -27,6 +29,7 @@ class CustomRecipeCard extends StatefulWidget {
 
 class _CustomRecipeCardState extends State<CustomRecipeCard> {
   bool isFavorite = false;
+
   void toggleFavorite() {
     setState(() {
       isFavorite = !isFavorite;
@@ -35,45 +38,84 @@ class _CustomRecipeCardState extends State<CustomRecipeCard> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: widget.width.toDouble(),
-      margin: const EdgeInsets.only(right: 16),
+    return SizedBox(
+      width: widget.width,
       child: Column(
-        mainAxisSize:
-            MainAxisSize.min, // ⬅️ ini penting biar gak makan ruang ekstra
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Gambar + durasi
           Stack(
             children: [
-              // Gambar utama (pakai asset)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.asset(
-                  widget.imageAsset,
-                  width: double.infinity,
-                  height: widget.height.toDouble(),
-                  fit: BoxFit.cover,
+              // Container untuk shadow + gambar
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.18),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                      spreadRadius: 1,
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(
+                    widget.imageUrl,
+                    width: double.infinity,
+                    height: widget.height,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: double.infinity,
+                        height: widget.height,
+                        color: Colors.grey[300],
+                        child: const Center(
+                          child: Icon(Icons.image_not_supported),
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
+
+              // Overlay judul di tengah
               if (widget.titleCenter != null && widget.titleCenter!.isNotEmpty)
                 Positioned.fill(
-                  child: Align(
-                    alignment: Alignment.center,
-                    child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      child: CustomText(
-                        text: widget.titleCenter ?? '',
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withOpacity(0.4),
+                        ],
+                      ),
+                    ),
+                    child: Align(
+                      alignment: Alignment.center,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: CustomText(
+                          text: widget.titleCenter ?? '',
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ),
                   ),
                 ),
 
               // Label waktu di pojok kiri bawah
-              if (widget.duration != null && widget.duration!.isNotEmpty)
+              if (widget.showDuration && widget.duration != null)
                 Positioned(
                   bottom: 0,
                   left: 0,
@@ -82,14 +124,19 @@ class _CustomRecipeCardState extends State<CustomRecipeCard> {
                       horizontal: 8,
                       vertical: 4,
                     ),
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.only(
-                        topRight: Radius.circular(12),
-                        bottomLeft: Radius.circular(8),
-                      ),
+                      borderRadius: BorderRadius.circular(6),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 1),
+                        ),
+                      ],
                     ),
                     child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         const Icon(
                           Icons.timer,
@@ -113,36 +160,44 @@ class _CustomRecipeCardState extends State<CustomRecipeCard> {
             ],
           ),
 
-          const SizedBox(height: 8),
-
-          // Judul + ikon favorit
-          if (widget.title != null && widget.title!.isNotEmpty)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    widget.title ?? '',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Color(0xFF191919),
-                      fontSize: 16,
-                      fontFamily: 'Lexend',
-                      fontWeight: FontWeight.w500,
+          if (widget.title != null && widget.title!.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Text(
+                      widget.title ?? '',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFF191919),
+                        fontSize: 13,
+                        fontFamily: 'Lexend',
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
-                ),
-                GestureDetector(
-                  onTap: widget.onFavoriteTap ?? toggleFavorite,
-                  child: Icon(
-                    isFavorite ? Icons.favorite : Icons.favorite_border,
-                    color: Color(0xFFDD4A14),
-                    size: 20,
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: widget.onFavoriteTap ?? toggleFavorite,
+                    child: SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: Icon(
+                        isFavorite ? Icons.favorite : Icons.favorite_border,
+                        color: const Color(0xFFDD4A14),
+                        size: 18,
+                      ),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
+          ],
         ],
       ),
     );

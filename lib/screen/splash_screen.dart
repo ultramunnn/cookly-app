@@ -1,8 +1,8 @@
 import 'dart:async';
+import 'package:cookly_app/screen/main_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:cookly_app/screen/login_screen.dart';
-import 'package:cookly_app/screen/home_screen.dart';
 import 'package:cookly_app/theme/app_color.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -28,13 +28,13 @@ class _SplashScreenState extends State<SplashScreen> {
     if (!mounted) return;
 
     if (session != null) {
-      // ✅ User sudah login
+      // User sudah login
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        MaterialPageRoute(builder: (context) => const MainScreen()),
       );
     } else {
-      // ❌ Belum login
+      // Belum login
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const LoginScreen()),

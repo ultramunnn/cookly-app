@@ -1,4 +1,4 @@
-import 'package:cookly_app/screen/home_screen.dart';
+import 'package:cookly_app/screen/main_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:cookly_app/theme/app_color.dart';
 import 'package:cookly_app/widgets/sections/login/logo_section.dart';
@@ -43,10 +43,12 @@ class _LoginScreenState extends State<LoginScreen> {
         if (!mounted) return;
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
+          MaterialPageRoute(builder: (context) => const MainScreen()),
         );
       } else {
-        _showErrorDialog('Login gagal, periksa kembali email dan password Anda.');
+        _showErrorDialog(
+          'Login gagal, periksa kembali email dan password Anda.',
+        );
       }
     } catch (e) {
       _showErrorDialog('Terjadi kesalahan saat login. Coba lagi');
@@ -64,20 +66,14 @@ class _LoginScreenState extends State<LoginScreen> {
           'Gagal Masuk',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: Colors.redAccent,
+            color: AppColors.primary,
           ),
         ),
-        content: Text(
-          message,
-          style: const TextStyle(fontSize: 15),
-        ),
+        content: Text(message, style: const TextStyle(fontSize: 15)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'OK',
-              style: TextStyle(color: AppColors.primary),
-            ),
+            child: const Text('OK', style: TextStyle(color: AppColors.primary)),
           ),
         ],
       ),
@@ -117,10 +113,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 // Tombol login
                 _isLoading
                     ? const CircularProgressIndicator(color: AppColors.primary)
-                    : CustomButton(
-                        text: 'Login',
-                        onPressed: _login,
-                      ),
+                    : CustomButton(text: 'Login', onPressed: _login),
 
                 const SizedBox(height: 12),
                 Text(

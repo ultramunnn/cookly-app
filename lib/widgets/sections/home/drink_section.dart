@@ -1,33 +1,42 @@
+import 'package:cookly_app/screen/detail/allrecipe_screen.dart';
 import 'package:cookly_app/screen/detail/detail_content.dart';
+import 'package:cookly_app/theme/app_color.dart';
 import 'package:cookly_app/widgets/components/custom_text.dart';
 import 'package:flutter/material.dart';
 import 'package:cookly_app/widgets/components/custom_recipe_card.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:cookly_app/helper/formatduration.dart';
 
-class RecipytodaySection extends StatefulWidget {
-  const RecipytodaySection({super.key});
+class DrinkSection extends StatefulWidget {
+  const DrinkSection({super.key});
 
   @override
-  State<RecipytodaySection> createState() => _RecipytodaySectionState();
+  State<DrinkSection> createState() => _DrinkSectionState();
 }
 
-class _RecipytodaySectionState extends State<RecipytodaySection> {
-  // Variabel untuk menampung future dari Supabase
-  late final Future<List<Map<String, dynamic>>> _recipesFuture;
+class _DrinkSectionState extends State<DrinkSection> {
+  late final Future<List<Map<String, dynamic>>> _drinkRecipesFuture;
 
   @override
   void initState() {
     super.initState();
-    // Panggil fungsi untuk mengambil data saat widget pertama kali dibuat
-    _recipesFuture = _getRecipes();
+    _drinkRecipesFuture = _getDrinkRecipes();
   }
 
-  // Fungsi untuk mengambil data dari tabel 'resep' di Supabase
-  Future<List<Map<String, dynamic>>> _getRecipes() async {
-    // Ambil data dari tabel 'resep'
-    final data = await Supabase.instance.client.from('resep').select();
-    return data;
+  // Fungsi untuk mengambil resep minuman dari Supabase
+  // Asumsi kategori_id untuk minuman adalah 2
+  Future<List<Map<String, dynamic>>> _getDrinkRecipes() async {
+    try {
+      final data = await Supabase.instance.client
+          .from('resep')
+          .select()
+          .eq('kategori_id', 2) // kategori_id 2 = Minuman
+          .eq('is_public', true)
+          .limit(10);
+      return data;
+    } catch (e) {
+      throw Exception('Error loading drink recipes: $e');
+    }
   }
 
   // Fungsi untuk menampilkan error dialog yang modern
@@ -94,7 +103,7 @@ class _RecipytodaySectionState extends State<RecipytodaySection> {
             onPressed: () {
               Navigator.pop(context);
               setState(() {
-                _recipesFuture = _getRecipes();
+                _drinkRecipesFuture = _getDrinkRecipes();
               });
             },
             child: const CustomText(
@@ -112,41 +121,60 @@ class _RecipytodaySectionState extends State<RecipytodaySection> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Judul Section
-          const Row(
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CustomText(
-                text: 'Resep Hari Ini',
+              const CustomText(
+                text: 'Minuman',
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
                 color: Colors.black,
+              ),
+              const Spacer(),
+              GestureDetector(
+                // Navigate ke halaman "Lihat semua minuman"
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          const AllRecipesScreen(kategoriFilter: 'Minuman'),
+                    ),
+                  );
+                },
+                child: const CustomText(
+                  text: 'Lihat Semua',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primary,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 12),
 
-          // Scroll horizontal dengan FutureBuilder
+          // FutureBuilder untuk mengambil data minuman dari Supabase
           SizedBox(
             width: double.infinity,
-            height: 150,
+            height: 200,
             child: FutureBuilder<List<Map<String, dynamic>>>(
-              future: _recipesFuture, // Gunakan future yang sudah kita buat
+              future: _drinkRecipesFuture,
               builder: (context, snapshot) {
-                // 1. Tampilkan loading indicator saat data sedang diambil
+                // Loading state
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                // 2. Tampilkan error dialog jika terjadi kesalahan
+                // Error state
                 if (snapshot.hasError) {
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     _showErrorDialog(
                       context,
-                      'Gagal memuat resep. Periksa koneksi internet Anda.\n\nError: ${snapshot.error}',
+                      'Gagal memuat resep minuman. Periksa koneksi internet Anda.\n\nError: ${snapshot.error}',
                     );
                   });
                   return const Center(
@@ -159,12 +187,12 @@ class _RecipytodaySectionState extends State<RecipytodaySection> {
                   );
                 }
 
-                // 3. Jika data berhasil didapat dan tidak kosong
+                // No data state
                 final recipes = snapshot.data!;
                 if (recipes.isEmpty) {
                   return const Center(
                     child: CustomText(
-                      text: 'Tidak ada resep hari ini.',
+                      text: 'Tidak ada resep minuman.',
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                       color: Color(0xFF999999),
@@ -172,7 +200,7 @@ class _RecipytodaySectionState extends State<RecipytodaySection> {
                   );
                 }
 
-                // Ubah list data dari Supabase menjadi list widget
+                // Build recipe cards
                 final List<Widget> recipeCards = recipes.map((recipe) {
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
@@ -188,11 +216,11 @@ class _RecipytodaySectionState extends State<RecipytodaySection> {
                       },
                       child: CustomRecipeCard(
                         imageUrl: recipe['gambar_url']!,
-                        titleCenter: recipe['judul'],
+                        title: recipe['judul'],
                         duration: formatDuration(recipe['durasi']),
-                        height: 120,
-                        width: 120,
-                        showDuration: false,
+                        height: 150,
+                        width: 150,
+                        showDuration: true,
                       ),
                     ),
                   );
