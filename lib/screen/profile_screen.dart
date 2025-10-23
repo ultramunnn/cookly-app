@@ -1,9 +1,11 @@
+import 'package:cookly_app/data/repository/user_repository.dart';
 import 'package:cookly_app/screen/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:cookly_app/theme/app_color.dart';
 import 'package:cookly_app/widgets/components/custom_text.dart';
 import 'package:cookly_app/widgets/components/custom_navbar.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:cookly_app/data/models/user_model.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -13,9 +15,11 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final supabase = Supabase.instance.client;
-  Map<String, dynamic>? profileData;
-  bool isLoading = true;
+  final _supabase = Supabase.instance.client;
+  final _repo = UserRepository();
+
+  UserModel? _user;
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -25,28 +29,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadProfile() async {
     try {
-      final user = supabase.auth.currentUser;
-      if (user == null) return;
+      final currentUser = _supabase.auth.currentUser;
+      if (currentUser == null) {
+        debugPrint('No authenticated user found');
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
+        return;
+      }
 
-      final response = await supabase
-          .from('profiles')
-          .select()
-          .eq('id', user.id)
-          .single();
+      debugPrint('Loading profile for user ID: ${currentUser.id}');
 
-      setState(() {
-        profileData = response;
-        isLoading = false;
-      });
+      // langsung gunakan string ID (UUID)
+      final user = await _repo.getProfileById(currentUser.id);
+
+      if (mounted) {
+        setState(() {
+          _user = user;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      debugPrint('Error load profile: $e');
-      setState(() => isLoading = false);
+      debugPrint('Error loading profile: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
   Future<void> _logout(BuildContext context) async {
     try {
-      await supabase.auth.signOut();
+      await _supabase.auth.signOut();
       if (context.mounted) {
         Navigator.pushAndRemoveUntil(
           context,
@@ -55,7 +68,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       }
     } catch (e) {
-      _showErrorDialog(context, 'Gagal logout: $e');
+      _showErrorDialog(context, 'Logout failed: $e');
     }
   }
 
@@ -63,16 +76,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Terjadi Kesalahan'),
-        content: Text(message),
+        title: const CustomText(
+          text: 'Error',
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+          color: Colors.black,
+        ),
+        content: CustomText(
+          text: message,
+          fontSize: 14,
+          fontWeight: FontWeight.w400,
+          color: Colors.grey[800]!,
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Tutup'),
+            child: const CustomText(
+              text: 'Close',
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.primary,
+            ),
           ),
         ],
       ),
     );
+  }
+
+  void _navigateToEditProfile() {
+    // TODO: Implement edit profile navigation
+    debugPrint('Navigate to edit profile');
   }
 
   @override
@@ -80,142 +113,104 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       backgroundColor: AppColors.white,
       body: SafeArea(
-        child: isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : Padding(
-                padding: const EdgeInsets.only(bottom: 100),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const CustomNavbar(),
-                      const SizedBox(height: 24),
-
-                      // 🔹 Header
-                      Center(
-                        child: Column(
-                          children: [
-                            Container(
-                              height: 100,
-                              width: 100,
-                              decoration: BoxDecoration(
-                                color: AppColors.primary.withOpacity(0.15),
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: AppColors.primary,
-                                  width: 2,
-                                ),
-                              ),
-                              child: const Icon(
-                                Icons.person,
-                                color: AppColors.primary,
-                                size: 50,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            const CustomText(
-                              text: "Profil Saya",
-                              fontSize: 24,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.black,
-                            ),
-                            const SizedBox(height: 8),
-                            const CustomText(
-                              text: "Kelola data pribadi Anda",
-                              fontSize: 14,
-                              fontWeight: FontWeight.w400,
-                              color: Colors.grey,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-
-                      ProfileItem(
-                        label: "Nama Lengkap",
-                        value: profileData?['nama'] ?? '-',
-                      ),
-                      const SizedBox(height: 16),
-                      ProfileItem(
-                        label: "Username",
-                        value: profileData?['username'] ?? '-',
-                      ),
-                      const SizedBox(height: 16),
-                      ProfileItem(
-                        label: "Email",
-                        value: supabase.auth.currentUser?.email ?? '-',
-                      ),
-
-                      const SizedBox(height: 32),
-                      const Divider(color: Color(0xFFF1F1F1)),
-                      const SizedBox(height: 24),
-
-                      // 🔹 Tombol Aksi
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 14,
-                                ),
-                              ),
-                              onPressed: () {
-                                // TODO: Navigasi ke Edit Profile
-                              },
-                              child: const CustomText(
-                                text: 'Edit Profil',
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 14,
-                                ),
-                              ),
-                              onPressed: () => _logout(context),
-                              child: const CustomText(
-                                text: 'Logout',
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+        child: _isLoading
+            ? const Center(
+                child: CircularProgressIndicator(color: AppColors.primary),
+              )
+            : _buildContent(),
       ),
     );
   }
-}
 
-class ProfileItem extends StatelessWidget {
-  final String label;
-  final String value;
+  Widget _buildContent() {
+    return Column(
+      children: [
+        // Navbar
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20),
+          child: CustomNavbar(),
+        ),
+        const SizedBox(height: 24),
 
-  const ProfileItem({super.key, required this.label, required this.value});
+        // Profile Content
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header Section
+                _buildProfileHeader(),
+                const SizedBox(height: 32),
 
-  @override
-  Widget build(BuildContext context) {
+                // Profile Info Section
+                _buildProfileInfo(),
+                const SizedBox(height: 32),
+
+                // Action Buttons
+                _buildActionButtons(),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProfileHeader() {
+    return Center(
+      child: Column(
+        children: [
+          // Profile Avatar
+          Container(
+            height: 100,
+            width: 100,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.15),
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.primary, width: 2),
+            ),
+            child: const Icon(Icons.person, color: AppColors.primary, size: 50),
+          ),
+          const SizedBox(height: 16),
+
+          // Title
+          const CustomText(
+            text: "My Profile",
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
+            color: Colors.black,
+          ),
+          const SizedBox(height: 8),
+
+          // Subtitle
+          const CustomText(
+            text: "Manage your personal data",
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+            color: Colors.grey,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfileInfo() {
+    return Column(
+      children: [
+        _buildProfileItem(label: "Full Name", value: _user?.name ?? '-'),
+        const SizedBox(height: 16),
+        _buildProfileItem(label: "Username", value: _user?.username ?? '-'),
+        const SizedBox(height: 16),
+        _buildProfileItem(
+          label: "Email",
+          value: _supabase.auth.currentUser?.email ?? '-',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProfileItem({required String label, required String value}) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -238,10 +233,68 @@ class ProfileItem extends StatelessWidget {
               fontSize: 16,
               fontWeight: FontWeight.w500,
               color: Colors.grey[800]!,
+              textAlign: TextAlign.right,
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildActionButtons() {
+    return Column(
+      children: [
+        const Divider(color: Color(0xFFF1F1F1)),
+        const SizedBox(height: 24),
+
+        // Buttons
+        Row(
+          children: [
+            // Edit Profile Button
+            Expanded(
+              child: ElevatedButton(
+                onPressed: _navigateToEditProfile,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  elevation: 0,
+                ),
+                child: const CustomText(
+                  text: 'Edit Profile',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+
+            // Logout Button
+            Expanded(
+              child: ElevatedButton(
+                onPressed: () => _logout(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  elevation: 0,
+                ),
+                child: const CustomText(
+                  text: 'Logout',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

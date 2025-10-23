@@ -1,12 +1,14 @@
-import 'package:cookly_app/screen/detail/detail_content.dart';
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:cookly_app/theme/app_color.dart';
 import 'package:cookly_app/widgets/components/custom_text.dart';
 import 'package:cookly_app/widgets/components/custom_searchbar.dart';
+import 'package:cookly_app/helper/formatduration.dart';
+import 'package:cookly_app/screen/detail/detail_content.dart';
+import 'package:cookly_app/data/repository/recipes_repository.dart';
+import 'package:cookly_app/data/models/recipes_model.dart';
 
 class AllRecipesScreen extends StatefulWidget {
-  final String? kategoriFilter; // Contoh: 'minuman', 'makanan', dll.
+  final String? kategoriFilter;
 
   const AllRecipesScreen({super.key, this.kategoriFilter});
 
@@ -15,9 +17,9 @@ class AllRecipesScreen extends StatefulWidget {
 }
 
 class _AllRecipesScreenState extends State<AllRecipesScreen> {
-  final supabase = Supabase.instance.client;
-  List<Map<String, dynamic>> allRecipes = [];
-  List<Map<String, dynamic>> filteredRecipes = [];
+  final repo = RecipesRepository();
+  List<Recipe> allRecipes = [];
+  List<Recipe> filteredRecipes = [];
   bool isLoading = true;
   String searchQuery = '';
 
@@ -27,74 +29,24 @@ class _AllRecipesScreenState extends State<AllRecipesScreen> {
     _loadRecipes();
   }
 
-  //Ambil data resep dari Supabase (opsional dengan filter kategori)
   Future<void> _loadRecipes() async {
     setState(() => isLoading = true);
-
-    try {
-      // Jika ada filter kategori
-      if (widget.kategoriFilter != null && widget.kategoriFilter!.isNotEmpty) {
-        final kategoriName = widget.kategoriFilter!.trim();
-
-        // Ambil ID kategori dari nama_kategori
-        final kategoriResp = await supabase
-            .from('kategori')
-            .select('kategori_id')
-            .eq('nama_kategori', kategoriName)
-            .maybeSingle();
-
-        if (kategoriResp == null) {
-          debugPrint('Kategori $kategoriName tidak ditemukan');
-          setState(() {
-            allRecipes = [];
-            filteredRecipes = [];
-            isLoading = false;
-          });
-          return;
-        }
-
-        final kategoriId = kategoriResp['kategori_id'];
-
-        //Query resep berdasarkan kategori_id
-        final response = await supabase
-            .from('resep')
-            .select('*, kategori(nama_kategori)')
-            .eq('kategori_id', kategoriId);
-
-        setState(() {
-          allRecipes = List<Map<String, dynamic>>.from(response);
-          filteredRecipes = allRecipes;
-          isLoading = false;
-        });
-      } else {
-        //Jika tidak ada filter, ambil semua resep
-        final response = await supabase
-            .from('resep')
-            .select('*, kategori(nama_kategori)');
-
-        setState(() {
-          allRecipes = List<Map<String, dynamic>>.from(response);
-          filteredRecipes = allRecipes;
-          isLoading = false;
-        });
-      }
-    } catch (e, st) {
-      debugPrint('Error loading recipes: $e\n$st');
-      setState(() => isLoading = false);
-    }
+    final result = await repo.getAllRecipes(kategoriFilter: widget.kategoriFilter);
+    setState(() {
+      allRecipes = result;
+      filteredRecipes = result;
+      isLoading = false;
+    });
   }
 
-  //Fungsi pencarian resep berdasarkan nama, deskripsi, atau kategori
   void _searchRecipe(String query) {
     final lowerQuery = query.toLowerCase();
     setState(() {
       searchQuery = query;
-      filteredRecipes = allRecipes.where((recipe) {
-        final nama = recipe['judul']?.toString().toLowerCase() ?? '';
-        final deskripsi = recipe['deskripsi']?.toString().toLowerCase() ?? '';
-        final kategori =
-            recipe['kategori']?['nama_kategori']?.toString().toLowerCase() ??
-            '';
+      filteredRecipes = allRecipes.where((r) {
+        final nama = r.name.toLowerCase();
+        final deskripsi = r.deskripsi?.toLowerCase() ?? '';
+        final kategori = r.kategori?.toLowerCase() ?? '';
         return nama.contains(lowerQuery) ||
             deskripsi.contains(lowerQuery) ||
             kategori.contains(lowerQuery);
@@ -112,113 +64,209 @@ class _AllRecipesScreenState extends State<AllRecipesScreen> {
       backgroundColor: AppColors.white,
       appBar: AppBar(
         backgroundColor: AppColors.primary,
-        title: Text(title, style: const TextStyle(color: AppColors.white)),
+        title: Text(title,
+            style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 20)),
         centerTitle: true,
-        iconTheme: const IconThemeData(color: AppColors.white),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
+              color: AppColors.primary,
               onRefresh: _loadRecipes,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
-                ),
-                child: Column(
-                  children: [
-                    // 🔍 Searchbar
-                    CustomSearchbar(
+              child: Column(
+                children: [
+                  // 🔍 Searchbar
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                    child: CustomSearchbar(
                       hintText: 'Cari resep...',
                       onSearch: _searchRecipe,
                     ),
-                    const SizedBox(height: 16),
+                  ),
 
-                    // 📋 Daftar resep
-                    Expanded(
-                      child: filteredRecipes.isEmpty
-                          ? Center(
-                              child: CustomText(
-                                text: searchQuery.isEmpty
-                                    ? "Belum ada resep tersedia."
-                                    : "Tidak ada hasil untuk \"$searchQuery\"",
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.grey,
-                              ),
-                            )
-                          : ListView.builder(
-                              physics: const BouncingScrollPhysics(),
-                              itemCount: filteredRecipes.length,
-                              itemBuilder: (context, index) {
-                                final resep = filteredRecipes[index];
-                                final fotoUrl = resep['gambar_url'];
-
-                                return Card(
-                                  margin: const EdgeInsets.only(bottom: 12),
-                                  elevation: 2,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: ListTile(
-                                    contentPadding: const EdgeInsets.all(12),
-                                    leading: ClipRRect(
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: fotoUrl != null
-                                          ? Image.network(
-                                              fotoUrl,
-                                              width: 60,
-                                              height: 60,
-                                              fit: BoxFit.cover,
-                                            )
-                                          : Container(
-                                              width: 60,
-                                              height: 60,
-                                              color: Colors.grey[300],
-                                              child: const Icon(
-                                                Icons.fastfood,
-                                                color: Colors.white70,
-                                              ),
-                                            ),
-                                    ),
-                                    title: CustomText(
-                                      text: resep['judul'] ?? 'Tanpa Nama',
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.black,
-                                    ),
-                                    subtitle: CustomText(
-                                      text:
-                                          resep['deskripsi'] ??
-                                          'Tidak ada deskripsi',
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w400,
-                                      color: Colors.grey[600]!,
-                                    ),
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => RecipeDetailScreen(
-                                            resepId: resep['resep_id'],
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                );
-                              },
-                            ),
+                  if (searchQuery.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: CustomText(
+                          text: 'Ditemukan ${filteredRecipes.length} resep',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.grey[600]!,
+                        ),
+                      ),
                     ),
-                  ],
-                ),
+
+                  Expanded(
+                    child: filteredRecipes.isEmpty
+                        ? _buildEmptyState()
+                        : ListView.builder(
+                            padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                            itemCount: filteredRecipes.length,
+                            itemBuilder: (context, index) {
+                              return _buildRecipeCard(filteredRecipes[index]);
+                            },
+                          ),
+                  ),
+                ],
               ),
             ),
     );
   }
+
+  Widget _buildRecipeCard(Recipe resep) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => RecipeDetailScreen(resepId: resep.id),
+              ),
+            );
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 🖼️ Gambar
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: resep.gambarUrl != null
+                      ? Image.network(
+                          resep.gambarUrl!,
+                          width: 100,
+                          height: 100,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => _buildPlaceholderImage(),
+                        )
+                      : _buildPlaceholderImage(),
+                ),
+                const SizedBox(width: 12),
+
+                // 📄 Konten
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      CustomText(
+                        text: resep.name,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black,
+                        maxLines: 2,
+                      ),
+                      const SizedBox(height: 6),
+
+                      if (resep.kategori != null) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: CustomText(
+                            text: resep.kategori!,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                      ],
+
+                      CustomText(
+                        text: resep.deskripsi ?? 'Tidak ada deskripsi',
+                        fontSize: 13,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.grey[600]!,
+                        maxLines: 2,
+                      ),
+                      const SizedBox(height: 8),
+
+                      if (resep.durasi != null)
+                        Row(
+                          children: [
+                            const Icon(Icons.timer_outlined,
+                                size: 16, color: AppColors.primary),
+                            const SizedBox(width: 4),
+                            CustomText(
+                              text: formatDuration(resep.durasi!),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primary,
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPlaceholderImage() {
+    return Container(
+      width: 100,
+      height: 100,
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Icon(Icons.restaurant, size: 40, color: Colors.grey[400]),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            searchQuery.isEmpty ? Icons.restaurant_menu : Icons.search_off,
+            size: 64,
+            color: Colors.grey[300],
+          ),
+          const SizedBox(height: 16),
+          CustomText(
+            text: searchQuery.isEmpty
+                ? "Belum ada resep tersedia."
+                : "Tidak ada hasil untuk \"$searchQuery\"",
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: Colors.grey,
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-/// 🔤 Extension untuk kapitalisasi huruf pertama
 extension StringCasing on String {
   String capitalize() =>
       isEmpty ? this : '${this[0].toUpperCase()}${substring(1)}';

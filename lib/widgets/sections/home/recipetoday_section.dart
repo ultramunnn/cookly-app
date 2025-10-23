@@ -1,8 +1,9 @@
+import 'package:cookly_app/data/models/recipes_model.dart';
+import 'package:cookly_app/data/repository/recipes_repository.dart';
 import 'package:cookly_app/screen/detail/detail_content.dart';
 import 'package:cookly_app/widgets/components/custom_text.dart';
 import 'package:flutter/material.dart';
 import 'package:cookly_app/widgets/components/custom_recipe_card.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:cookly_app/helper/formatduration.dart';
 
 class RecipytodaySection extends StatefulWidget {
@@ -13,20 +14,22 @@ class RecipytodaySection extends StatefulWidget {
 }
 
 class _RecipytodaySectionState extends State<RecipytodaySection> {
-  // Variabel untuk menampung future dari Supabase
-  late final Future<List<Map<String, dynamic>>> _recipesFuture;
+  // Variabel untuk menampung future 
+  Future<List<Recipe>>? _recipesFuture;
+  final repo = RecipesRepository();
 
   @override
   void initState() {
     super.initState();
-    // Panggil fungsi untuk mengambil data saat widget pertama kali dibuat
     _recipesFuture = _getRecipes();
   }
 
-  // Fungsi untuk mengambil data dari tabel 'resep' di Supabase
-  Future<List<Map<String, dynamic>>> _getRecipes() async {
+  // Fungsi untuk mengambil data dari tabel 'resep' 
+  Future<List<Recipe>> _getRecipes() async {
     // Ambil data dari tabel 'resep'
-    final data = await Supabase.instance.client.from('resep').select();
+    final data = await repo.getAllRecipes(
+      limit: 10
+    );
     return data;
   }
 
@@ -133,7 +136,7 @@ class _RecipytodaySectionState extends State<RecipytodaySection> {
           SizedBox(
             width: double.infinity,
             height: 150,
-            child: FutureBuilder<List<Map<String, dynamic>>>(
+            child: FutureBuilder<List<Recipe>>(
               future: _recipesFuture, // Gunakan future yang sudah kita buat
               builder: (context, snapshot) {
                 // 1. Tampilkan loading indicator saat data sedang diambil
@@ -182,14 +185,14 @@ class _RecipytodaySectionState extends State<RecipytodaySection> {
                           context,
                           MaterialPageRoute(
                             builder: (context) =>
-                                RecipeDetailScreen(resepId: recipe['resep_id']),
+                                RecipeDetailScreen(resepId: recipe.id),
                           ),
                         );
                       },
                       child: CustomRecipeCard(
-                        imageUrl: recipe['gambar_url']!,
-                        titleCenter: recipe['judul'],
-                        duration: formatDuration(recipe['durasi']),
+                        imageUrl: recipe.gambarUrl,
+                        titleCenter: recipe.name,
+                        duration: formatDuration(recipe.durasi),
                         height: 120,
                         width: 120,
                         showDuration: false,

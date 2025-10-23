@@ -1,9 +1,10 @@
+import 'package:cookly_app/data/repository/recipes_repository.dart';
+import 'package:cookly_app/data/models/recipes_model.dart';
 import 'package:cookly_app/widgets/components/custom_navbar.dart';
 import 'package:cookly_app/widgets/components/custom_searchbar.dart';
 import 'package:flutter/material.dart';
 import 'package:cookly_app/theme/app_color.dart';
 import 'package:cookly_app/widgets/components/custom_text.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:cookly_app/helper/formatduration.dart';
 
 class RecipeDetailScreen extends StatefulWidget {
@@ -17,44 +18,29 @@ class RecipeDetailScreen extends StatefulWidget {
 }
 
 class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
-  late Future<Map<String, dynamic>> _recipeDetailFuture;
+  final repo = RecipesRepository();
 
-  // 🔍 Tambahan: hasil pencarian
+  late Future<Recipe> _recipeFuture;
+  late Future<List<Map<String, dynamic>>> _ingredientsFuture;
+  late Future<List<Map<String, dynamic>>> _stepsFuture;
+  late Future<List<String>> _equipmentsFuture;
+
   List<Map<String, dynamic>> _searchResults = [];
   bool _isSearching = false;
 
   @override
   void initState() {
     super.initState();
-    _recipeDetailFuture = _getRecipeDetail();
+    _loadRecipe();
   }
 
-  Future<Map<String, dynamic>> _getRecipeDetail() async {
-    try {
-      final recipeData = await Supabase.instance.client
-          .from('resep')
-          .select()
-          .eq('resep_id', widget.resepId)
-          .single();
-
-      final ingredients = await Supabase.instance.client
-          .from('resep_bahan')
-          .select('jumlah, bahan(nama_bahan)')
-          .eq('resep_id', widget.resepId);
-
-      final steps = await Supabase.instance.client
-          .from('langkah_resep')
-          .select()
-          .eq('resep_id', widget.resepId)
-          .order('urutan', ascending: true);
-
-      return {'recipe': recipeData, 'ingredients': ingredients, 'steps': steps};
-    } catch (e) {
-      throw Exception('Error loading recipe: $e');
-    }
+  void _loadRecipe() {
+    _recipeFuture = repo.getRecipeDetail(widget.resepId);
+    _ingredientsFuture = repo.getIngredients(widget.resepId);
+    _stepsFuture = repo.getSteps(widget.resepId);
+    _equipmentsFuture = repo.getEquipments(widget.resepId);
   }
 
-  // 🔍 Fungsi untuk cari resep lain
   Future<void> _searchRecipes(String keyword) async {
     if (keyword.isEmpty) {
       setState(() {
@@ -64,14 +50,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       return;
     }
 
-    final result = await Supabase.instance.client
-        .from('resep')
-        .select('resep_id, judul, gambar_url, durasi')
-        .ilike('judul', '%$keyword%');
-
+    final results = await repo.searchRecipes(keyword);
     setState(() {
       _isSearching = true;
-      _searchResults = List<Map<String, dynamic>>.from(result);
+      _searchResults = [];
     });
   }
 
@@ -91,113 +73,25 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
             const SizedBox(height: 16),
             Expanded(
               child: _isSearching
-                  ? _buildSearchResults() // tampilkan hasil pencarian
-                  : FutureBuilder<Map<String, dynamic>>(
-                      future: _recipeDetailFuture,
+                  ? _buildSearchResults()
+                  : FutureBuilder<Recipe>(
+                      future: _recipeFuture,
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
-                          return const Center(child: CircularProgressIndicator());
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
                         }
 
                         if (snapshot.hasError) {
-                          return Center(child: Text('Error: ${snapshot.error}'));
+                          return Center(
+                            child: Text('Error: ${snapshot.error}'),
+                          );
                         }
 
-                        final data = snapshot.data!;
-                        final recipe = data['recipe'] as Map<String, dynamic>;
-                        final ingredients = data['ingredients'] as List<dynamic>;
-                        final steps = data['steps'] as List<dynamic>;
-
-                        return SingleChildScrollView(
-                          child: Padding(
-                            padding: const EdgeInsets.only(bottom: 40),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      // Gambar
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(16),
-                                        child: Image.network(
-                                          recipe['gambar_url'] ?? '',
-                                          height: 250,
-                                          width: double.infinity,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (context, error, stackTrace) {
-                                            return Container(
-                                              height: 250,
-                                              color: Colors.grey[300],
-                                              child: const Center(
-                                                child: Icon(Icons.image_not_supported),
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                      ),
-                                      const SizedBox(height: 20),
-
-                                      // Judul
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Expanded(
-                                            child: CustomText(
-                                              text: recipe['judul'] ?? 'Untitled',
-                                              fontSize: 24,
-                                              fontWeight: FontWeight.w700,
-                                              color: Colors.black,
-                                            ),
-                                          ),
-                                          Row(
-                                            children: const [
-                                              Icon(Icons.bookmark_border, color: Colors.grey),
-                                              SizedBox(width: 12),
-                                              Icon(Icons.share, color: Colors.grey),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 10),
-
-                                      // Durasi
-                                      Row(
-                                        children: [
-                                          const Icon(Icons.timer, color: AppColors.primary, size: 20),
-                                          const SizedBox(width: 8),
-                                          CustomText(
-                                            text: formatDuration(recipe['durasi']),
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w600,
-                                            color: AppColors.primary,
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 28),
-                                      const Divider(color: Color(0xFFF1F1F1)),
-
-                                      // Bahan
-                                      const SectionTitle("Bahan-bahan"),
-                                      const SizedBox(height: 12),
-                                      _buildIngredientsList(ingredients),
-                                      const SizedBox(height: 28),
-                                      const Divider(color: Color(0xFFF1F1F1)),
-
-                                      // Langkah
-                                      const SectionTitle("Langkah-langkah"),
-                                      const SizedBox(height: 12),
-                                      _buildStepsList(steps),
-                                      const SizedBox(height: 80),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
+                        final recipe = snapshot.data!;
+                        return _buildRecipeDetail(recipe);
                       },
                     ),
             ),
@@ -207,7 +101,113 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     );
   }
 
-  //Widget hasil pencarian
+  Widget _buildRecipeDetail(Recipe recipe) {
+    return FutureBuilder(
+      future: Future.wait([
+        _ingredientsFuture,
+        _stepsFuture,
+        _equipmentsFuture,
+      ]),
+      builder: (context, AsyncSnapshot<List<dynamic>> snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
+
+        final ingredients = snapshot.data![0] as List<Map<String, dynamic>>;
+        final steps = snapshot.data![1] as List<Map<String, dynamic>>;
+        final peralatan = snapshot.data![2] as List<String>;
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.only(bottom: 40),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Image.network(
+                    recipe.gambarUrl,
+                    height: 250,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        height: 250,
+                        color: Colors.grey[300],
+                        child: const Center(
+                          child: Icon(Icons.image_not_supported),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: CustomText(
+                        text: recipe.name,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const Row(
+                      children: [
+                        Icon(Icons.bookmark_border, color: Colors.grey),
+                        SizedBox(width: 12),
+                        Icon(Icons.share, color: Colors.grey),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+
+                Row(
+                  children: [
+                    const Icon(Icons.timer, color: AppColors.primary, size: 20),
+                    const SizedBox(width: 8),
+                    CustomText(
+                      text: formatDuration(recipe.durasi),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 28),
+                const Divider(color: Color(0xFFF1F1F1)),
+
+                const SectionTitle("Bahan-bahan"),
+                const SizedBox(height: 12),
+                _buildIngredientsList(ingredients),
+                const SizedBox(height: 28),
+
+                const SectionTitle("Peralatan"),
+                const SizedBox(height: 12),
+                _buildPeralatanList(peralatan),
+                const SizedBox(height: 28),
+                const Divider(color: Color(0xFFF1F1F1)),
+
+                const SectionTitle("Langkah-langkah"),
+                const SizedBox(height: 12),
+                _buildStepsList(steps),
+                const SizedBox(height: 80),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildSearchResults() {
     if (_searchResults.isEmpty) {
       return const Center(child: Text('Tidak ada hasil.'));
@@ -225,7 +225,6 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
           title: Text(resep['judul']),
           subtitle: Text(formatDuration(resep['durasi'])),
           onTap: () {
-            // Navigasi ke detail resep lain
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
@@ -238,33 +237,54 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     );
   }
 
-  Widget _buildIngredientsList(List<dynamic> ingredients) {
+  Widget _buildIngredientsList(List<Map<String, dynamic>> ingredients) {
     if (ingredients.isEmpty) {
       return const SectionText("Tidak ada bahan yang tersedia.");
     }
 
     String ingredientsText = ingredients
-        .map((item) {
-          final jumlah = item['jumlah'] ?? '';
-          final namaBahan = item['bahan']?['nama_bahan'] ?? '';
-          return '$jumlah $namaBahan';
-        })
+        .map(
+          (item) =>
+              "${item['jumlah'] ?? ''} ${item['bahan']?['nama_bahan'] ?? ''}",
+        )
         .join('\n');
 
     return SectionText(ingredientsText);
   }
 
-  Widget _buildStepsList(List<dynamic> steps) {
+  Widget _buildPeralatanList(List<String> peralatan) {
+    if (peralatan.isEmpty) {
+      return const SectionText("Tidak ada peralatan yang diperlukan.");
+    }
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 4,
+      children: peralatan
+          .map(
+            (alat) => Chip(
+              label: Text(
+                alat,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.primary,
+                ),
+              ),
+              backgroundColor: AppColors.primary.withOpacity(0.08),
+            ),
+          )
+          .toList(),
+    );
+  }
+
+  Widget _buildStepsList(List<Map<String, dynamic>> steps) {
     if (steps.isEmpty) {
       return const SectionText("Tidak ada langkah yang tersedia.");
     }
 
     String stepsText = steps
-        .map((step) {
-          final urutan = step['urutan'] ?? 0;
-          final deskripsi = step['deskripsi'] ?? '';
-          return '$urutan. $deskripsi';
-        })
+        .map((step) => "${step['urutan'] ?? 0}. ${step['deskripsi'] ?? ''}")
         .join('\n');
 
     return SectionText(stepsText);

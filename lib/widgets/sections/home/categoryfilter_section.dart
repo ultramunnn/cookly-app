@@ -1,9 +1,9 @@
+import 'package:cookly_app/data/repository/recipes_repository.dart';
 import 'package:cookly_app/widgets/components/custom_text.dart';
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class CategoryFilterSection extends StatefulWidget {
-  final ValueChanged<int>? onSelected; // Ubah ke int (kategori_id)
+  final ValueChanged<String>? onSelected;
 
   const CategoryFilterSection({super.key, this.onSelected});
 
@@ -13,7 +13,10 @@ class CategoryFilterSection extends StatefulWidget {
 
 class _CategoryFilterSectionState extends State<CategoryFilterSection> {
   late final Future<List<Map<String, dynamic>>> _categoriesFuture;
-  int? selectedCategoryId;
+  String? selectedCategoryName;
+
+  
+  final _categoryRepository = RecipesRepository();
 
   // Mapping kategori ke icon sesuai database
   final Map<String, IconData> categoryIcons = {
@@ -24,20 +27,7 @@ class _CategoryFilterSectionState extends State<CategoryFilterSection> {
   @override
   void initState() {
     super.initState();
-    _categoriesFuture = _getCategories();
-  }
-
-  // Fungsi untuk mengambil kategori dari Supabase
-  Future<List<Map<String, dynamic>>> _getCategories() async {
-    try {
-      final data = await Supabase.instance.client
-          .from('kategori')
-          .select()
-          .order('kategori_id', ascending: true);
-      return data;
-    } catch (e) {
-      throw Exception('Error loading categories: $e');
-    }
+    _categoriesFuture = _categoryRepository.getAllCategories();
   }
 
   @override
@@ -63,12 +53,10 @@ class _CategoryFilterSectionState extends State<CategoryFilterSection> {
             child: FutureBuilder<List<Map<String, dynamic>>>(
               future: _categoriesFuture,
               builder: (context, snapshot) {
-                // Loading state
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                // Error state
                 if (snapshot.hasError) {
                   return Center(
                     child: CustomText(
@@ -80,7 +68,6 @@ class _CategoryFilterSectionState extends State<CategoryFilterSection> {
                   );
                 }
 
-                // No data
                 final categories = snapshot.data!;
                 if (categories.isEmpty) {
                   return const Center(
@@ -93,23 +80,22 @@ class _CategoryFilterSectionState extends State<CategoryFilterSection> {
                   );
                 }
 
-                // Build kategori buttons
                 return SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.start,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: categories.map((category) {
-                      final categoryId = category['kategori_id'] as int;
                       final categoryName = category['nama_kategori'] as String;
-                      final isSelected = selectedCategoryId == categoryId;
+                      final isSelected = selectedCategoryName == categoryName;
 
                       return GestureDetector(
                         onTap: () {
                           setState(() {
-                            selectedCategoryId = isSelected ? null : categoryId;
+                            selectedCategoryName =
+                                isSelected ? null : categoryName;
                           });
-                          widget.onSelected?.call(categoryId);
+                          widget.onSelected?.call(categoryName);
                         },
                         child: Container(
                           margin: const EdgeInsets.only(right: 32),
@@ -129,9 +115,7 @@ class _CategoryFilterSectionState extends State<CategoryFilterSection> {
                           width: 48,
                           height: 48,
                           child: Icon(
-                            categoryIcons[categoryName] ??
-                                Icons
-                                    .category, // Default icon jika tidak ada mapping
+                            categoryIcons[categoryName] ?? Icons.category,
                             color: isSelected ? primaryColor : Colors.white,
                             size: 24,
                           ),

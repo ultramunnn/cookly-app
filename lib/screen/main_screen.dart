@@ -1,4 +1,5 @@
 import 'package:cookly_app/screen/content/home_content.dart';
+import 'package:cookly_app/screen/detail/allrecipe_screen.dart';
 import 'package:cookly_app/screen/profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:cookly_app/widgets/components/custom_bottom_navbar.dart';
@@ -6,7 +7,6 @@ import 'package:cookly_app/theme/app_color.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
-
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -17,9 +17,7 @@ class _MainScreenState extends State<MainScreen> {
 
   final List<Widget> _pages = [
     const HomeContent(),
-    const Center(
-      child: Text("Search Page", style: TextStyle(color: Colors.black)),
-    ),
+    const AllRecipesScreen(),
     const Center(
       child: Text("Add Something", style: TextStyle(color: Colors.black)),
     ),

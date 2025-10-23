@@ -1,10 +1,11 @@
+import 'package:cookly_app/data/models/recipes_model.dart';
+import 'package:cookly_app/data/repository/recipes_repository.dart';
 import 'package:cookly_app/screen/detail/allrecipe_screen.dart';
 import 'package:cookly_app/screen/detail/detail_content.dart';
 import 'package:cookly_app/theme/app_color.dart';
 import 'package:cookly_app/widgets/components/custom_text.dart';
 import 'package:flutter/material.dart';
 import 'package:cookly_app/widgets/components/custom_recipe_card.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:cookly_app/helper/formatduration.dart';
 
 class DrinkSection extends StatefulWidget {
@@ -15,7 +16,8 @@ class DrinkSection extends StatefulWidget {
 }
 
 class _DrinkSectionState extends State<DrinkSection> {
-  late final Future<List<Map<String, dynamic>>> _drinkRecipesFuture;
+  late final Future<List<Recipe>> _drinkRecipesFuture;
+  final repo = RecipesRepository();
 
   @override
   void initState() {
@@ -23,20 +25,10 @@ class _DrinkSectionState extends State<DrinkSection> {
     _drinkRecipesFuture = _getDrinkRecipes();
   }
 
-  // Fungsi untuk mengambil resep minuman dari Supabase
-  // Asumsi kategori_id untuk minuman adalah 2
-  Future<List<Map<String, dynamic>>> _getDrinkRecipes() async {
-    try {
-      final data = await Supabase.instance.client
-          .from('resep')
-          .select()
-          .eq('kategori_id', 2) // kategori_id 2 = Minuman
-          .eq('is_public', true)
-          .limit(10);
-      return data;
-    } catch (e) {
-      throw Exception('Error loading drink recipes: $e');
-    }
+  // Fungsi untuk mengambil resep minuman
+  Future<List<Recipe>> _getDrinkRecipes() async {
+    final data = await repo.getAllRecipes(kategoriFilter: 'Minuman', limit: 10);
+    return data;
   }
 
   // Fungsi untuk menampilkan error dialog yang modern
@@ -161,7 +153,7 @@ class _DrinkSectionState extends State<DrinkSection> {
           SizedBox(
             width: double.infinity,
             height: 200,
-            child: FutureBuilder<List<Map<String, dynamic>>>(
+            child: FutureBuilder<List<Recipe>>(
               future: _drinkRecipesFuture,
               builder: (context, snapshot) {
                 // Loading state
@@ -210,14 +202,14 @@ class _DrinkSectionState extends State<DrinkSection> {
                           context,
                           MaterialPageRoute(
                             builder: (context) =>
-                                RecipeDetailScreen(resepId: recipe['resep_id']),
+                                RecipeDetailScreen(resepId: recipe.id),
                           ),
                         );
                       },
                       child: CustomRecipeCard(
-                        imageUrl: recipe['gambar_url']!,
-                        title: recipe['judul'],
-                        duration: formatDuration(recipe['durasi']),
+                        imageUrl: recipe.gambarUrl!,
+                        title: recipe.name,
+                        duration: formatDuration(recipe.durasi),
                         height: 150,
                         width: 150,
                         showDuration: true,

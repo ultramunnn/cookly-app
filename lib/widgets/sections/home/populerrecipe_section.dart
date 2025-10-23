@@ -1,3 +1,5 @@
+import 'package:cookly_app/data/models/recipes_model.dart';
+import 'package:cookly_app/data/repository/recipes_repository.dart';
 import 'package:cookly_app/screen/detail/allrecipe_screen.dart';
 import 'package:cookly_app/theme/app_color.dart';
 import 'package:cookly_app/widgets/components/custom_text.dart';
@@ -15,7 +17,8 @@ class PopulerRecipe extends StatefulWidget {
 }
 
 class _PopulerRecipeState extends State<PopulerRecipe> {
-  late final Future<List<Map<String, dynamic>>> _popularRecipesFuture;
+  late final Future<List<Recipe>> _popularRecipesFuture;
+  final repo = RecipesRepository();
 
   @override
   void initState() {
@@ -23,15 +26,12 @@ class _PopulerRecipeState extends State<PopulerRecipe> {
     _popularRecipesFuture = _getPopularRecipes();
   }
 
-  // Fungsi untuk mengambil data resep populer dari Supabase
-  Future<List<Map<String, dynamic>>> _getPopularRecipes() async {
-    // Ambil resep yang is_public dan kategori_id bukan minuman (kategori_id = 2)
-    final data = await Supabase.instance.client
-        .from('resep')
-        .select()
-        .eq('is_public', true)
-        .neq('kategori_id', 2) // Filter: kategori_id tidak boleh 2 (Minuman)
-        .limit(10);
+  // Fungsi untuk mengambil data resep 
+  Future<List<Recipe>> _getPopularRecipes() async {
+    final data = await repo.getAllRecipes(
+      limit: 10,
+      kategoriFilter: "Makanan"
+    );
     return data;
   }
 
@@ -152,7 +152,7 @@ class _PopulerRecipeState extends State<PopulerRecipe> {
           SizedBox(
             width: double.infinity,
             height: 200,
-            child: FutureBuilder<List<Map<String, dynamic>>>(
+            child: FutureBuilder<List<Recipe>>(
               future: _popularRecipesFuture,
               builder: (context, snapshot) {
                 // Loading state
@@ -201,14 +201,14 @@ class _PopulerRecipeState extends State<PopulerRecipe> {
                           context,
                           MaterialPageRoute(
                             builder: (context) =>
-                                RecipeDetailScreen(resepId: recipe['resep_id']),
+                                RecipeDetailScreen(resepId: recipe.id),
                           ),
                         );
                       },
                       child: CustomRecipeCard(
-                        imageUrl: recipe['gambar_url']!,
-                        title: recipe['judul'],
-                        duration: formatDuration(recipe['durasi']),
+                        imageUrl: recipe.gambarUrl,
+                        title: recipe.name,
+                        duration: formatDuration(recipe.durasi),
                         height: 150,
                         width: 150,
                         showDuration: true,
