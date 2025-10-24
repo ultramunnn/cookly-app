@@ -1,4 +1,5 @@
 import 'package:cookly_app/screen/content/home_content.dart';
+import 'package:cookly_app/screen/create_screen.dart';
 import 'package:cookly_app/screen/detail/allrecipe_screen.dart';
 import 'package:cookly_app/screen/profile_screen.dart';
 import 'package:flutter/material.dart';
@@ -19,7 +20,7 @@ class _MainScreenState extends State<MainScreen> {
     const HomeContent(),
     const AllRecipesScreen(),
     const Center(
-      child: Text("Add Something", style: TextStyle(color: Colors.black)),
+      child: TambahResepScreen(),
     ),
     const Center(
       child: Text("Favorite Page", style: TextStyle(color: Colors.black)),

@@ -53,7 +53,7 @@ class _CustomRecipeCardState extends State<CustomRecipeCard> {
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.18),
+                      color: Colors.black.withValues(alpha: 0.18),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                       spreadRadius: 1,
@@ -92,7 +92,7 @@ class _CustomRecipeCardState extends State<CustomRecipeCard> {
                         end: Alignment.bottomCenter,
                         colors: [
                           Colors.transparent,
-                          Colors.black.withOpacity(0.4),
+                          Colors.black.withValues(alpha: 0.4),
                         ],
                       ),
                     ),
@@ -129,7 +129,7 @@ class _CustomRecipeCardState extends State<CustomRecipeCard> {
                       borderRadius: BorderRadius.circular(6),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 4,
                           offset: const Offset(0, 1),
                         ),

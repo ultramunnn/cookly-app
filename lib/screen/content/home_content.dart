@@ -27,7 +27,9 @@ class _HomeContentState extends State<HomeContent> {
   bool _isLoading = false;
   List<Recipe> _searchResults = [];
 
-  /// 🔍 Cari resep menggunakan repository
+  
+
+  /// Cari resep menggunakan repository
   Future<void> _searchRecipes(String keyword) async {
     if (keyword.isEmpty) {
       setState(() {
@@ -54,7 +56,7 @@ class _HomeContentState extends State<HomeContent> {
     }
   }
 
-  /// 🔧 Widget hasil pencarian
+  ///  Widget hasil pencarian
   Widget _buildSearchResults() {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());

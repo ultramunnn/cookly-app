@@ -31,7 +31,7 @@ class CustomBottomNavBar extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, -3),
           ),
@@ -52,7 +52,7 @@ class CustomBottomNavBar extends StatelessWidget {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primary.withOpacity(0.4),
+                      color: AppColors.primary.withValues(alpha: 0.4),
                       blurRadius: 12,
                       offset: const Offset(0, 6),
                     ),
@@ -78,7 +78,7 @@ class CustomBottomNavBar extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: selectedIndex == index
-                      ? AppColors.primary.withOpacity(0.15)
+                      ? AppColors.primary.withValues(alpha: 0.15)
                       : Colors.transparent,
                 ),
                 child: Center(

@@ -30,8 +30,14 @@ class _AllRecipesScreenState extends State<AllRecipesScreen> {
   }
 
   Future<void> _loadRecipes() async {
+    if (!mounted) return; // safety awal
     setState(() => isLoading = true);
-    final result = await repo.getAllRecipes(kategoriFilter: widget.kategoriFilter);
+
+    final result = await repo.getAllRecipes(
+      kategoriFilter: widget.kategoriFilter,
+    );
+
+    if (!mounted) return; // cek lagi sebelum setState
     setState(() {
       allRecipes = result;
       filteredRecipes = result;
@@ -64,11 +70,14 @@ class _AllRecipesScreenState extends State<AllRecipesScreen> {
       backgroundColor: AppColors.white,
       appBar: AppBar(
         backgroundColor: AppColors.primary,
-        title: Text(title,
-            style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-                fontSize: 20)),
+        title: Text(
+          title,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+            fontSize: 20,
+          ),
+        ),
         centerTitle: true,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
@@ -90,7 +99,10 @@ class _AllRecipesScreenState extends State<AllRecipesScreen> {
 
                   if (searchQuery.isNotEmpty)
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 8,
+                      ),
                       child: Align(
                         alignment: Alignment.centerLeft,
                         child: CustomText(
@@ -150,7 +162,7 @@ class _AllRecipesScreenState extends State<AllRecipesScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 🖼️ Gambar
+                // Gambar
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: resep.gambarUrl != null
@@ -159,13 +171,14 @@ class _AllRecipesScreenState extends State<AllRecipesScreen> {
                           width: 100,
                           height: 100,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => _buildPlaceholderImage(),
+                          errorBuilder: (_, __, ___) =>
+                              _buildPlaceholderImage(),
                         )
                       : _buildPlaceholderImage(),
                 ),
                 const SizedBox(width: 12),
 
-                // 📄 Konten
+                // Konten
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -181,7 +194,10 @@ class _AllRecipesScreenState extends State<AllRecipesScreen> {
 
                       if (resep.kategori != null) ...[
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: AppColors.primary.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(6),
@@ -208,8 +224,11 @@ class _AllRecipesScreenState extends State<AllRecipesScreen> {
                       if (resep.durasi != null)
                         Row(
                           children: [
-                            const Icon(Icons.timer_outlined,
-                                size: 16, color: AppColors.primary),
+                            const Icon(
+                              Icons.timer_outlined,
+                              size: 16,
+                              color: AppColors.primary,
+                            ),
                             const SizedBox(width: 4),
                             CustomText(
                               text: formatDuration(resep.durasi!),

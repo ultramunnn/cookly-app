@@ -6,7 +6,6 @@ import 'package:cookly_app/widgets/components/custom_text.dart';
 import 'package:flutter/material.dart';
 import 'package:cookly_app/widgets/components/custom_recipe_card.dart';
 import 'package:cookly_app/screen/detail/detail_content.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:cookly_app/helper/formatduration.dart';
 
 class PopulerRecipe extends StatefulWidget {
@@ -47,7 +46,7 @@ class _PopulerRecipeState extends State<PopulerRecipe> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.1),
+                color: Colors.red.withValues(alpha: .1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(
