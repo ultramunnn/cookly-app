@@ -2,6 +2,7 @@ import 'package:cookly_app/screen/content/home_content.dart';
 import 'package:cookly_app/screen/create_screen.dart';
 import 'package:cookly_app/screen/detail/allrecipe_screen.dart';
 import 'package:cookly_app/screen/profile_screen.dart';
+import 'package:cookly_app/screen/favorite_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:cookly_app/widgets/components/custom_bottom_navbar.dart';
 import 'package:cookly_app/theme/app_color.dart';
@@ -19,12 +20,8 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _pages = [
     const HomeContent(),
     const AllRecipesScreen(),
-    const Center(
-      child: TambahResepScreen(),
-    ),
-    const Center(
-      child: Text("Favorite Page", style: TextStyle(color: Colors.black)),
-    ),
+    const Center(child: TambahResepScreen()),
+    const FavoriteScreen(),
     const ProfileScreen(),
   ];
 

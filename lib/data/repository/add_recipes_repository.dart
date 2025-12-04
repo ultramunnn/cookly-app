@@ -1,8 +1,8 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-// Tambah resep lengkap (dengan bahan, langkah, dan peralatan)
 class AddRecipesRepository {
   final _client = Supabase.instance.client;
+  static const String _storageBucket = 'recipes';
 
   Future<void> addRecipe({
     required String judul,

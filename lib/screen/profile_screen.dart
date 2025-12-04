@@ -1,5 +1,6 @@
 import 'package:cookly_app/data/repository/user_repository.dart';
 import 'package:cookly_app/screen/login_screen.dart';
+import 'package:cookly_app/screen/edit_profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:cookly_app/theme/app_color.dart';
 import 'package:cookly_app/widgets/components/custom_text.dart';
@@ -31,16 +32,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final currentUser = _supabase.auth.currentUser;
       if (currentUser == null) {
-        debugPrint('No authenticated user found');
         if (mounted) {
           setState(() => _isLoading = false);
         }
         return;
       }
 
-      debugPrint('Loading profile for user ID: ${currentUser.id}');
-
-      // langsung gunakan string ID (UUID)
       final user = await _repo.getProfileById(currentUser.id);
 
       if (mounted) {
@@ -50,7 +47,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         });
       }
     } catch (e) {
-      debugPrint('Error loading profile: $e');
       if (mounted) {
         setState(() => _isLoading = false);
       }
@@ -104,8 +100,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _navigateToEditProfile() {
-    // TODO: Implement edit profile navigation
-    debugPrint('Navigate to edit profile');
+    if (_user != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => EditProfileScreen(user: _user!)),
+      ).then((result) {
+        if (result == true) {
+          _loadProfile(); // Reload profil setelah edit
+        }
+      });
+    }
   }
 
   @override
@@ -161,7 +165,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Center(
       child: Column(
         children: [
-          // Profile Avatar
+          // Profile Avatar - Updated untuk menampilkan gambar
           Container(
             height: 100,
             width: 100,
@@ -170,7 +174,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
               shape: BoxShape.circle,
               border: Border.all(color: AppColors.primary, width: 2),
             ),
-            child: const Icon(Icons.person, color: AppColors.primary, size: 50),
+            child: ClipOval(
+              child: _user?.gambarUrl != null && _user!.gambarUrl!.isNotEmpty
+                  ? Image.network(
+                      _user!.gambarUrl!,
+                      fit: BoxFit.cover,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return const Center(
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              AppColors.primary,
+                            ),
+                          ),
+                        );
+                      },
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: AppColors.primary.withOpacity(0.1),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.image_not_supported,
+                                color: AppColors.primary,
+                                size: 40,
+                              ),
+                              const SizedBox(height: 8),
+                              CustomText(
+                                text: 'Gambar tidak bisa dimuat',
+                                fontSize: 12,
+                                color: AppColors.primary,
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    )
+                  : Icon(Icons.person, color: AppColors.primary, size: 50),
+            ),
           ),
           const SizedBox(height: 16),
 
