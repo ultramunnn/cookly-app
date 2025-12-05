@@ -158,7 +158,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         child: ClipOval(
                           child: _gambarUrl != null && _gambarUrl!.isNotEmpty
                               ? Image.network(
-                                  _gambarUrl!,
+                                  '${_gambarUrl!}?v=${DateTime.now().millisecondsSinceEpoch}',
                                   fit: BoxFit.cover,
                                   loadingBuilder:
                                       (context, child, loadingProgress) {

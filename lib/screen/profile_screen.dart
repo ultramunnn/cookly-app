@@ -177,7 +177,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: ClipOval(
               child: _user?.gambarUrl != null && _user!.gambarUrl!.isNotEmpty
                   ? Image.network(
-                      _user!.gambarUrl!,
+                      '${_user!.gambarUrl!}?v=${DateTime.now().millisecondsSinceEpoch}',
                       fit: BoxFit.cover,
                       loadingBuilder: (context, child, loadingProgress) {
                         if (loadingProgress == null) return child;
