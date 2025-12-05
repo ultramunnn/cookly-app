@@ -117,6 +117,7 @@ cookly-app/
 │   └── widget_test.dart
 ├── web/
 │   └── index.html
+├── public_schema.sql                # Posgresql
 ├── pubspec.yaml
 ├── .env.example
 └── README.md
@@ -161,88 +162,16 @@ flutter pub get
 
 - Buat project di [Supabase](https://supabase.com)
 - Buat bucket storage `profile-images` dan `recipes`
-- Buat tabel:
+- Buat tabel di supabase SQL Editor:
 
   ```
-  4. **Setup Supabase**
-
+  public_schema.sql
   ```
 
 - Buat project di [Supabase](https://supabase.com)
 - Buat bucket storage `profile-images` dan `recipes`
 - Buat tabel:
-  -- WARNING: This schema is for context only and is not meant to be run.
-  -- Table order and constraints may not be valid for execution.
-
-```
-    CREATE TABLE public.bahan (
-    bahan_id integer NOT NULL DEFAULT nextval('bahan_bahan_id_seq'::regclass),
-    nama_bahan text NOT NULL,
-    CONSTRAINT bahan_pkey PRIMARY KEY (bahan_id)
-    );
-
-    CREATE TABLE public.kategori (
-    kategori_id integer NOT NULL DEFAULT nextval('kategori_kategori_id_seq'::regclass),
-    nama_kategori text NOT NULL,
-    CONSTRAINT kategori_pkey PRIMARY KEY (kategori_id)
-    );
-
-    CREATE TABLE public.langkah_resep (
-    langkah_id integer NOT NULL DEFAULT nextval('langkah_resep_langkah_id_seq'::regclass),
-    resep_id integer,
-    urutan integer NOT NULL,
-    deskripsi text NOT NULL,
-    CONSTRAINT langkah_resep_pkey PRIMARY KEY (langkah_id),
-    CONSTRAINT langkah_resep_resep_id_fkey FOREIGN KEY (resep_id) REFERENCES public.resep(resep_id)
-    );
-
-    CREATE TABLE public.peralatan (
-    peralatan_id integer NOT NULL DEFAULT nextval('peralatan_peralatan_id_seq'::regclass),
-    nama_peralatan text NOT NULL,
-    CONSTRAINT peralatan_pkey PRIMARY KEY (peralatan_id)
-    );
-
-    CREATE TABLE public.profiles (
-    id uuid NOT NULL,
-    nama text,
-    username text UNIQUE,
-    created_at timestamp without time zone DEFAULT now(),
-    gambar_url text,
-    CONSTRAINT profiles_pkey PRIMARY KEY (id),
-    CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
-    );
-
-    CREATE TABLE public.resep (
-    resep_id integer NOT NULL DEFAULT nextval('resep_resep_id_seq'::regclass),
-    judul text NOT NULL,
-    deskripsi text,
-    durasi integer,
-    kategori_id integer,
-    user_id uuid,
-    tanggal_upload timestamp without time zone DEFAULT now(),
-    is_public boolean DEFAULT true,
-    gambar_url text,
-    CONSTRAINT resep_pkey PRIMARY KEY (resep_id),
-    CONSTRAINT resep_kategori_id_fkey FOREIGN KEY (kategori_id) REFERENCES public.kategori(kategori_id),
-    CONSTRAINT resep_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id)
-    );
-
-    CREATE TABLE public.resep_bahan (
-    resep_id integer NOT NULL,
-    bahan_id integer NOT NULL,
-    jumlah text,
-    CONSTRAINT resep_bahan_pkey PRIMARY KEY (resep_id, bahan_id),
-    CONSTRAINT resep_bahan_resep_id_fkey FOREIGN KEY (resep_id) REFERENCES public.resep(resep_id),
-    CONSTRAINT resep_bahan_bahan_id_fkey FOREIGN KEY (bahan_id) REFERENCES public.bahan(bahan_id)
-    );
-
-    CREATE TABLE public.resep_peralatan (
-    resep_id integer NOT NULL,
-    peralatan_id integer NOT NULL,
-    CONSTRAINT resep_peralatan_pkey PRIMARY KEY (resep_id, peralatan_id),
-    CONSTRAINT resep_peralatan_resep_id_fkey FOREIGN KEY (resep_id) REFERENCES public.resep(resep_id),
-    CONSTRAINT resep_peralatan_peralatan_id_fkey FOREIGN KEY (peralatan_id) REFERENCES public.peralatan(peralatan_id)
-    );
+ 
 ```
 
 1. **Run App**
