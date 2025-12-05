@@ -4,6 +4,11 @@ Aplikasi mobile Flutter untuk berbagi dan menemukan resep masakan. Cookly memuda
 
 ## 📱 Fitur Utama
 
+## 🔑 Login page
+- Login via seed database
+- Register belum fungsional
+- login via gmail, facebook, instagram belum fungsional
+
 ### 🏠 Home Page
 
 - **Resep Hari Ini** - Rekomendasi resep spesial setiap hari
@@ -30,7 +35,7 @@ Aplikasi mobile Flutter untuk berbagi dan menemukan resep masakan. Cookly memuda
 - Tambah peralatan yang dibutuhkan
 - Simpan ke database
 
-### ❤️ Resep Favorit
+### ❤️ Resep Simpan, Share, dan Favorit
 
 - Masih dalam bentuk ui saja belum fungsional
 
@@ -174,34 +179,6 @@ flutter pub get
     flutter run 
     ```
 
-## 📖 Penggunaan
-
-### Login
-
-- Buat akun dengan email dan password
-- Atau login dengan akun yang sudah ada
-
-### Home Page
-
-- Lihat resep populer dan minuman
-- Gunakan fitur cari untuk mencari resep
-- Filter resep berdasarkan kategori
-
-### Buat Resep
-
-- Tekan tombol **+** di bottom navigation
-- Isi semua data resep
-- Upload foto resep
-- Simpan resep
-
-### Edit Profil
-
-- Tekan tab **Profile** di bottom navigation
-- Tekan tombol **Edit Profile**
-- Ubah nama, username, dan/atau foto
-- Simpan perubahan
-
-### Favorit
 
 -Masih dalam bentuk tampilan ui saja belum fungsional
 
@@ -211,6 +188,8 @@ flutter pub get
 - Pastikan bucket storage `recipes` sudah **public**
 - Cek RLS Policy di Supabase
 - Verifikasi URL gambar di browser
+
+
 
 ## 🤝 Kontribusi
 
