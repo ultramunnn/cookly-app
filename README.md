@@ -162,23 +162,17 @@ flutter pub get
 
 - Buat project di [Supabase](https://supabase.com)
 - Buat bucket storage `profile-images` dan `recipes`
-- Buat tabel di supabase SQL Editor:
-
+- Buat tabel:
+  
   ```
   public_schema.sql
   ```
 
-- Buat project di [Supabase](https://supabase.com)
-- Buat bucket storage `profile-images` dan `recipes`
-- Buat tabel:
- 
-```
-
 1. **Run App**
 
-```bash
-flutter run
-```
+    ```bash
+    flutter run 
+    ```
 
 ## 📖 Penggunaan
 
