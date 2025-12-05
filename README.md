@@ -168,7 +168,7 @@ flutter pub get
   public_schema.sql
   ```
 
-1. **Run App**
+5. **Run App**
 
     ```bash
     flutter run 
